@@ -1,101 +1,164 @@
-import Image from "next/image";
+'use client';
+
+import { useEffect, useState } from "react";
+import { getUsers, createUser, User, updateUser, deleteUser } from "./api";
+import { UserForm } from "./UserForm";
+import { UsersMap } from "./UsersMap";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [users, setUsers] = useState<User[]>([]);
+  const [name, setName] = useState<string>();
+  const [zipcode, setZipcode] = useState<number>();
+  
+  const [showCreate, setShowCreate] = useState(false);
+  const [createError, setCreateError] = useState<string | undefined>();
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const [updateError, setUpdateError] = useState<string | undefined>();
+  const [editingUser, setEditingUser] = useState<User | undefined>();
+
+  useEffect(() => {
+    fetchAllUsers();
+  }, []);
+
+  const fetchAllUsers = () => {
+    getUsers().then((users) => setUsers(users));
+  }
+
+  const handleCreateUser = () => {
+    if (name && zipcode) {
+      const user: User = {
+        name,
+        zipcode: zipcode,
+      };
+      createUser(user).then((user) => {
+        if (user.error) setCreateError(`Error creating user: ${user.error}`);
+        else {
+          handleClearCreateUser();
+          fetchAllUsers();
+        }
+      });
+    }
+  };
+
+  const handleClearCreateUser = () => {
+    setName(undefined);
+    setZipcode(undefined);
+    setShowCreate(false);
+  }
+
+  const handleShowCreateUser = () => {
+    setShowCreate(!showCreate);
+    setEditingUser(undefined);
+  }
+
+  const handleSetEditingUser = (user: User) => {
+    setShowCreate(false);
+    setEditingUser(user);
+  };
+
+  const handleUpdateUser = () => {
+    if (editingUser?._id && editingUser.name && editingUser.zipcode) {
+      updateUser(editingUser._id, editingUser).then((user) => {
+        if (user.error) setUpdateError(`Error updating user: ${user.error}`);
+        else {
+          setEditingUser(undefined);
+          fetchAllUsers();
+        }
+      });
+    }
+  }
+
+  const handleCancelUpdateUser = () => {
+    setEditingUser(undefined);
+  }
+
+  const handleDeleteUser = () => {
+    if (editingUser?._id) {
+      deleteUser(editingUser._id).then((user) => {
+        console.log('user:',user)
+        fetchAllUsers();
+        setEditingUser(undefined);
+      }).catch((error) => {
+        console.error('error:',error)
+      });
+    }
+  }
+
+  const getCurrentTime = (timezone: string | undefined) => {
+    if (!timezone) return 'Not available';
+    const date = new Date();
+    const utc = date.getTime() + (Number(timezone) * 60000);
+    const newDate = new Date(utc);
+    return newDate.toLocaleString();
+  }
+
+  return (
+    <div className="justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
+      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start w-full">
+        <div className="w-full">
+          <UsersMap users={users} onMarkerClick={handleSetEditingUser} />
+          <div className="flex justify-between items-center">
+            <h1>View all users</h1>
+            <button className={`bg-cyan-400 hover:bg-cyan-200 rounded-full h-8 w-8 text-stone-800 text-xl transition-all duration-300 ease-in-out ${showCreate && 'rotate-45'}`} onClick={() => handleShowCreateUser()}>+</button>
+          </div>
+
+          { showCreate &&
+            <div className="p-3 bg-neutral-700 rounded-xl shadow-md">
+              <UserForm
+                title="Create user"
+                isShowing={showCreate}
+                name={name}
+                zipcode={zipcode}
+                setName={setName}
+                setZipcode={setZipcode}
+                onSubmit={handleCreateUser}
+                onCancel={handleClearCreateUser}
+                error={createError}
+              />
+            </div>
+          }
+
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-4 font-bold p-3">
+              <div className="w-1/4 p-1">Name</div>
+              <div className="w-1/4 p-1">Zipcode</div>
+              <div className="w-1/4 p-1">Location</div>
+              <div className="w-1/4 p-1">Current Time</div>
+              <div className="w-1/12 p-1"></div>
+            </div>
+            { users.map((user) => (
+              <div key={user._id} className={`show-children flex gap-4 flex-col hover:bg-neutral-700 rounded-xl ${editingUser?._id === user._id && 'bg-neutral-700 shadow-md'}`}>
+                <div className="flex gap-4 px-3">
+                  <div className="w-1/4 p-1">{user.name}</div>
+                  <div className="w-1/4 p-1">{user.zipcode}</div>
+                  <div className="w-1/4 p-1">{user.latitude}, {user.longitude}</div>
+                  <div className="w-1/4 p-1">{getCurrentTime(user.timezone)}</div>
+                  <div className="w-1/12 p-1">
+                    { !editingUser && <button onClick={() => handleSetEditingUser(user)} className="text-cyan-400 hover:text-cyan-200 hidden-child">Edit</button> }
+                  </div>
+                </div>
+
+                { editingUser?._id === user._id &&
+                  <div className="px-3 pb-3">
+                    <UserForm
+                      title="Edit user"
+                      isShowing={editingUser?._id === user._id}
+                      name={editingUser?.name}
+                      zipcode={editingUser?.zipcode}
+                      setName={(name: string) => setEditingUser({ ...editingUser, name })}
+                      setZipcode={(zip: number) => setEditingUser({ ...editingUser, zipcode: zip })}
+                      onSubmit={handleUpdateUser}
+                      onCancel={handleCancelUpdateUser}
+                      onDelete={handleDeleteUser}
+                      error={updateError}
+                    />
+                  </div>
+                }
+              </div>
+            ))}
+          </div>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }
