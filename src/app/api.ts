@@ -9,10 +9,7 @@ export type User = {
   timezone?: string;
 }
 
-// const apiBase = 'https://codesandbox.io/auth/preview?preview_url=https://9vtgwg-8080.csb.app/users/&shortid=9vtgwg'
 const apiBase = 'http://localhost:8080';
-// const headers = new Headers();
-// headers.append("Content-Type", "application/json");
 
 const getUsers = async () => {
   const response = await fetch(`${apiBase}/users/`);

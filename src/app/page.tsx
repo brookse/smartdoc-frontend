@@ -84,12 +84,13 @@ export default function Home() {
     }
   }
 
+  // timezone is the shift in seconds from UTC
   const getCurrentTime = (timezone: string | undefined) => {
     if (!timezone) return 'Not available';
-    const date = new Date();
-    const utc = date.getTime() + (Number(timezone) * 60000);
+    const utc = new Date().getTime() + (parseInt(timezone) * 1000);
     const newDate = new Date(utc);
-    return newDate.toLocaleString();
+
+    return `${newDate.getUTCHours() >= 12 ? newDate.getUTCHours() - 12 : newDate.getUTCHours()}:${newDate.getUTCMinutes()} ${newDate.getUTCHours() >= 12 ? 'PM' : 'AM'}`;
   }
 
   return (
@@ -123,7 +124,7 @@ export default function Home() {
               <div className="w-1/4 p-1">Name</div>
               <div className="w-1/4 p-1">Zipcode</div>
               <div className="w-1/4 p-1">Location</div>
-              <div className="w-1/4 p-1">Current Time</div>
+              <div className="w-1/4 p-1">Local Time</div>
               <div className="w-1/12 p-1"></div>
             </div>
             { users.map((user) => (
