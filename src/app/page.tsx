@@ -6,6 +6,7 @@ import { UserForm } from "./UserForm";
 import { UsersMap } from "./UsersMap";
 
 export default function Home() {
+  const [showServerError, setShowServerError] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [name, setName] = useState<string>();
   const [zipcode, setZipcode] = useState<number>();
@@ -21,7 +22,11 @@ export default function Home() {
   }, []);
 
   const fetchAllUsers = () => {
-    getUsers().then((users) => setUsers(users));
+    getUsers()
+    .then((users) => {
+      setUsers(users);
+      setShowServerError(false);
+    }).catch(() => setShowServerError(true));
   }
 
   const handleCreateUser = () => {
@@ -127,6 +132,9 @@ export default function Home() {
               <div className="w-1/4 p-1">Local Time</div>
               <div className="w-1/12 p-1"></div>
             </div>
+
+            { showServerError && <div className="p-3 bg-red-400 text-stone-800 rounded-xl">Error fetching users - is your local server running?</div> }
+
             { users.map((user) => (
               <div key={user._id} className={`show-children flex gap-4 flex-col hover:bg-neutral-700 rounded-xl ${editingUser?._id === user._id && 'bg-neutral-700 shadow-md'}`}>
                 <div className="flex gap-4 px-3">
