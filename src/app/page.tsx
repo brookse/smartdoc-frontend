@@ -35,7 +35,8 @@ export default function Home() {
         name,
         zipcode: zipcode,
       };
-      createUser(user).then((user) => {
+      createUser(user)
+      .then((user) => {
         if (user.error) setCreateError(`Error creating user: ${user.error}`);
         else {
           handleClearCreateUser();
@@ -63,7 +64,8 @@ export default function Home() {
 
   const handleUpdateUser = () => {
     if (editingUser?._id && editingUser.name && editingUser.zipcode) {
-      updateUser(editingUser._id, editingUser).then((user) => {
+      updateUser(editingUser._id, editingUser)
+      .then((user) => {
         if (user.error) setUpdateError(`Error updating user: ${user.error}`);
         else {
           setEditingUser(undefined);
@@ -79,8 +81,8 @@ export default function Home() {
 
   const handleDeleteUser = () => {
     if (editingUser?._id) {
-      deleteUser(editingUser._id).then((user) => {
-        console.log('user:',user)
+      deleteUser(editingUser._id)
+      .then(() => {
         fetchAllUsers();
         setEditingUser(undefined);
       }).catch((error) => {
@@ -95,7 +97,9 @@ export default function Home() {
     const utc = new Date().getTime() + (parseInt(timezone) * 1000);
     const newDate = new Date(utc);
 
-    return `${newDate.getUTCHours() >= 12 ? newDate.getUTCHours() - 12 : newDate.getUTCHours()}:${newDate.getUTCMinutes()} ${newDate.getUTCHours() >= 12 ? 'PM' : 'AM'}`;
+    const hours = newDate.getUTCHours();
+    const minutes = newDate.getUTCMinutes();
+    return `${hours >= 12 ? hours - 12 : hours}:${minutes < 10 ? '0' : ''}${minutes} ${hours >= 12 ? 'PM' : 'AM'}`;
   }
 
   return (
